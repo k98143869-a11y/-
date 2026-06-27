@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>极简记账本</title>
+<style>
+body{font-family:Arial;margin:0;background:#f5f5f5;}
+.container{max-width:500px;margin:auto;padding:15px;}
+.card{background:#fff;padding:15px;border-radius:12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+.row{display:flex;gap:10px;}
+input,select{flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;}
+button{padding:10px;border:none;border-radius:8px;background:#007bff;color:#fff;}
+button.delete{background:#ff4d4f;}
+.summary{display:flex;justify-content:space-between;font-weight:bold;}
+.income{color:green;}
+.expense{color:red;}
+.item{display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+small{color:#888;}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <div class="card">
+    <div class="summary">
+      <div>收入: <span id="income">0</span></div>
+      <div>支出: <span id="expense">0</span></div>
+      <div>余额: <span id="balance">0</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <select id="type">
+        <option value="income">收入</option>
+        <option value="expense">支出</option>
+      </select>
+      <input id="amount" type="number" placeholder="金额"/>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <input id="note" placeholder="备注"/>
+      <button onclick="add()">添加</button>
+    </div>
+  </div>
+
+  <div id="list"></div>
+
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("money") || "[]");
+
+function save(){
+  localStorage.setItem("money", JSON.stringify(data));
+}
+
+function add(){
+  let type = document.getElementById("type").value;
+  let amount = Number(document.getElementById("amount").value);
+  let note = document.getElementById("note").value;
+
+  if(!amount) return;
+
+  data.push({
+    id: Date.now(),
+    type,
+    amount,
+    note,
+    time: new Date().toLocaleString()
+  });
+
+  save();
+  render();
+}
+
+function del(id){
+  data = data.filter(i => i.id !== id);
+  save();
+  render();
+}
+
+function render(){
+  let income = 0, expense = 0;
+
+  let list = document.getElementById("list");
+  list.innerHTML = "";
+
+  data.sort((a,b)=>b.id-a.id);
+
+  data.forEach(i=>{
+    if(i.type==="income") income += i.amount;
+    else expense += i.amount;
+
+    let div = document.createElement("div");
+    div.className = "card item";
+    div.innerHTML = `
+      <div>
+        <div>${i.note || "无备注"} 
+        <small>${i.time}</small></div>
+        <div class="${i.type==='income'?'income':'expense'}">
+          ${i.type==='income'?'+':'-'}${i.amount}
+        </div>
+      </div>
+      <button class="delete" onclick="del(${i.id})">删除</button>
+    `;
+    list.appendChild(div);
+  });
+
+  document.getElementById("income").innerText = income;
+  document.getElementById("expense").innerText = expense;
+  document.getElementById("balance").innerText = income - expense;
+}
+
+render();
+</script>
+
+</body>
+</html>
